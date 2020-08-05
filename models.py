@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-from app import app
 
-db = SQLAlchemy(app)
+db = SQLAlchemy()
 
 
 class User(db.Model):
@@ -10,7 +9,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String, nullable=False, unique=True)
     password = db.Column(db.String, nullable=False, unique=True)
-    order_id = db.Column(db.Integer,db.ForeignKey('orders.id'))
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'))
     order = db.relationship('Order')
 
 
@@ -31,7 +30,7 @@ class Category(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False, unique=True)
-    dishes_id = db.Column(db.Integer,db.ForeignKey('dishes.id'))
+    dishes_id = db.Column(db.Integer, db.ForeignKey('dishes.id'))
     dish = db.relationship('Dish')
 
 
@@ -45,4 +44,4 @@ class Order(db.Model):
     email = db.Column(db.String, nullable=False, unique=True)
     phone = db.Column(db.String, nullable=False, unique=True)
     address = db.Column(db.String, nullable=False, unique=True)
-    # dishes_list
+    dishes_list = db.Column(db.String, nullable=False, unique=True)
