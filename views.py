@@ -1,15 +1,30 @@
-from collections import Counter
 from app import app, db
 from flask import render_template, flash, redirect, url_for, session
 from models import User, Category, Dish, Order, dishes_list
-from forms import OrderForm
+from forms import OrderForm, RegistrationForm, LoginForm
 
 
 @app.route('/')
 def render_main():
+    is_auth = session.get("is_auth")
     category_list = db.session.query(Category).all()
     dishes_items = db.session.query(Dish).all()
-    return render_template('main.html', category_list=category_list, dishes_items=dishes_items)
+    return render_template('main.html', category_list=category_list, dishes_items=dishes_items,is_auth=is_auth)
+
+
+@app.route('/auth')
+def render_auth():
+    form = LoginForm()
+    if session.get("is_auth"):
+        return redirect(url_for('render_account'))
+    else:
+        if form.validate_on_submit():
+            flash('Вы зашли на сайт', 'success')
+            session["is_auth"] = True
+            return redirect(url_for('render_account'))
+        else:
+            flash('Вы ввели не правильный логин или пароль', 'danger')
+    return render_template('auth.html', form=form)
 
 
 @app.route('/addtocart/<int:dish_id>')
@@ -53,14 +68,24 @@ def render_account():
     return render_template('account.html')
 
 
-@app.route('/login/')
+@app.route('/login/', methods=['POST', 'GET'])
 def render_login():
-    return render_template('login.html')
+    form = LoginForm()
+    if form.validate_on_submit():
+        flash('Вы зашли на сайт', 'success')
+        return redirect(url_for('render_account'))
+    else:
+        flash('Вы ввели не правильный логин или пароль', 'danger')
+    return render_template('login.html', form=form)
 
 
-@app.route('/register/')
+@app.route('/register/', methods=['GET', 'POST'])
 def render_register():
-    return render_template('register.html')
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        flash('Аккаунт создан', 'success')
+        return redirect(url_for('render_main'))
+    return render_template('register.html', form=form)
 
 
 @app.route('/logout/')
