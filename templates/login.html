@@ -2,7 +2,7 @@
 {% block container %}
     <div class="row">
         <div class="col-8 col-lg-4 offset-2 offset-lg-4">
-            <form class="form-signin pt-5" method="POST" action="{{ url_for('render_login') }}">
+            <form class="form-signin pt-5" method="POST" action="">
                 {{ form.hidden_tag() }}
                 <div class="text-center mt-5 b-1">
                     <img class="mb-4"
@@ -40,6 +40,8 @@
                 <div class="checkbox mb-3"></div>
                 {{ form.register(class_='btn btn-lg btn-danger btn-block') }}
             </form>
+            <a class="btn btn-lg btn-info btn-block mt-2" type="submit" href="{{ url_for('render_main') }}">На
+                главную</a>
         </div>
     </div>
 {% endblock %}

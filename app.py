@@ -4,7 +4,7 @@ from config import Configuration
 from models import *
 
 app = Flask(__name__)
-app.secret_key = '456dsv8/e99vahga0_994hhks'
+app.secret_key = '456dsv8/e99va1ga0_994h6ks'
 app.config.from_object(Configuration)
 db.init_app(app)
 
