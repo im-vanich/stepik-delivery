@@ -12,16 +12,15 @@ def render_register():
         email = form.email.data
         password = form.password.data
         user = User.query.filter(email == email).first()
-        if user:
+        if user.email == email:
             error_msg = "Пользователь с указанным именем уже существует"
             return render_template('register.html', error_msg=error_msg, form=form)
         new_user = User(email=email, password=password)
         db.session.add(new_user)
         db.session.commit()
         session['is_auth'] = True
-        is_auth = session.get('is_auth')
         flash('Аккаунт создан', 'success')
-        return redirect(url_for('render_main', is_auth=is_auth))
+        return redirect(url_for('render_main'))
     return render_template('register.html', form=form)
 
 
@@ -29,12 +28,9 @@ def render_register():
 def render_login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = db.session.query(User).filter_by(email=form.email.data).first()
+        user = db.session.query(User).filter(User.email == form.email.data).first()
         if user and user.password_valid(form.password.data):
-            session['user'] = {
-                'id': 'user.id',
-                'email': 'user.email'
-            }
+            session['email'] = user.email
             session['is_auth'] = True
             return redirect(url_for('render_main'))
         return render_template('login.html', form=form)
@@ -44,9 +40,11 @@ def render_login():
 @app.route('/')
 def render_main():
     category_list = db.session.query(Category).all()
-    dishes_items = db.session.query(Dish).all()
     is_auth = session.get('is_auth')
-    return render_template('main.html', category_list=category_list, dishes_items=dishes_items, is_auth=is_auth)
+    category_dish = {}
+    for i in range(1, len(category_list) + 1):
+        category_dish[i] = [item for item in db.session.query(Dish).filter(Dish.category_id == i).limit(3)]
+    return render_template('main.html', category_dish=category_dish, category_list=category_list, is_auth=is_auth)
 
 
 @app.route('/addtocart/<int:dish_id>')
@@ -54,7 +52,6 @@ def add_to_cart(dish_id):
     cart = session.get('cart', [])
     cart.append(dish_id)
     session['cart'] = cart
-
     return redirect(url_for('render_cart'))
 
 
@@ -87,36 +84,59 @@ def render_cart():
         phone = form.phone.data
         address = form.address.data
         dish = Dish.query.all()
-        user = db.session.query(User).filter(User.email == email).first()
-        order = Order(date=date.today(), order_price=total_price, status='ok', email=email, phone=phone,
-                      address=address, users_id=user.id)
-        db.session.add(order)
-        for d in dish:
-            if d.id in dish_list:
-                order.dishes.append(d)
-        db.session.commit()
-        flash('Заказ принят в работу', 'success')
+        user = db.session.query(User).filter(User.email == form.email.data).first()
+        if user and is_auth:  # Если пользователь залогинен добавляем заказ в базу
+            order = Order(date=date.today(), order_price=total_price, status='ok', email=email, phone=phone,
+                          address=address, users_id=user.id)
+            db.session.add(order)
+            for d in dish:
+                if d.id in dish_list:
+                    order.dishes.append(d)
+            db.session.commit()
+            flash('Заказ принят в работу', 'success')
+        else:
+            return render_template('cart.html', is_auth=is_auth, form=form, count=total_count, price=total_price,
+                                   cart_list=cart_list)
         return redirect(url_for('render_ordered'))
     return render_template('cart.html', form=form, count=total_count, price=total_price, cart_list=cart_list,
                            is_auth=is_auth)
-
-
-@app.route('/logout/')
-def render_logout():
-    session['is_auth'] = False
-    is_auth = session.get('is_auth')
-    return render_template('main.html', is_auth=is_auth)
 
 
 @app.route('/account/')
 def render_account():
     is_auth = session.get('is_auth')
     email = session.get('email')
-    order_list_query = Order.query.filter(email == email).first()  # получаем заказ пользователя
-    ls = Order.query.filter(Order.id == order_list_query.id).scalar()
-    print(ls.dishes.dish_id)
+    user = User.query.filter(User.email == email).first()
+    orders = Order.query.filter(Order.users_id == user.id).all()  # получаем список всех заказов пользователя
+    dishes = Dish.query.all()  # получаем список всех блюд
+    dl = db.session.query(dishes_list).all()  # получаем таблицу many to many отношения закозов и блю в них
+    new_orders = {}  # создаем пустой словарь для хранения блюд, для каждого заказа
+    for i in orders:
+        for j in dl:
+            if j[1] == i.id:
+                new_orders.setdefault(i.id, []).append(dishes[j[0] - 1])  # записывем блюда в словарь
+    print(new_orders)
+    return render_template('account.html', is_auth=is_auth, orders=new_orders)
 
-    return render_template('account.html', is_auth=is_auth)
+
+@app.route('/logout/')
+def render_logout():
+    session['is_auth'] = False
+    is_auth = session.get('is_auth')
+    session['cart'] = []
+    category_list = db.session.query(Category).all()
+    category_dish = {}
+    for i in range(1, len(category_list) + 1):
+        category_dish[i] = [item for item in db.session.query(Dish).filter(Dish.category_id == i).limit(3)]
+    return render_template('main.html', is_auth=is_auth, category_list=category_list, category_dish=category_dish)
+
+
+@app.route('/category/')
+def render_category():
+    is_auth = session.get('is_auth')
+    category_list = db.session.query(Category).all()
+    dishes_items = db.session.query(Dish).all()
+    return render_template('category.html', category_list=category_list, dishes_items=dishes_items, is_auth=is_auth)
 
 
 @app.route('/ordered/')

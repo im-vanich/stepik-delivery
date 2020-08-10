@@ -15,7 +15,6 @@
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
                         <a href="{{ url_for('render_cart') }}" class="btn btn-light btn-sm ml-4">Корзина</a>
                         <a href="{{ url_for('render_account') }}" class="btn btn-light btn-sm ml-4">Аккаунт</a>
-                        <a href="{{ url_for('render_category') }}" class="btn btn-light btn-sm ml-4">Категории</a>
                         <a href="{{ url_for('render_logout') }}" class="btn btn-light btn-sm ml-4">Выйти</a>
                     </div>
                 {% else %}
@@ -25,34 +24,33 @@
             </div>
         </nav>
     </header>
-    <section class="row">
-        <div class="col-12 col-lg-8">
-            <h1 class="h3 my-5">Личный кабинет. Заказы</h1>
-            {% for k,v in orders.items() %}
-                <div class="card mb-4">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <div class="row">
-                                <div class="col-7 col-lg-9">
-                                    <span class="h5 font-weight-bold">{{ v[0].orders[0].date }}</span>
 
+
+    {% for category in category_list %}
+        <section>
+            <h3 class="my-4">{{ category.title }}</h3>
+            <div class="row mt-4">
+                {% for item in dishes_items %}
+                    {% if item.category_id==category.id %}
+                        <div class="col-12 col-md-4">
+                            <div class="card mb-3">
+                                <img src='../static/pictures/{{ item.picture }}' width="300" height="200"
+                                     class="card-img-top" alt="">
+                                <div class="card-body">
+                                    <h4 class="h5 card-title">{{ item.title }}</h4>
+                                    <p class="card-text">{{ item.description }}</p>
+                                    <a href="{{ url_for('add_to_cart',dish_id=item.id) }}" class="btn btn-danger">В
+                                        корзину</a>
                                 </div>
-
-                            </div>
-                        </li>
-                        {% for i in range(v|length) %}
-                        <div class="card-body">
-                            <div class="row">
-                                <p class="col-4 text-muted">{{ v[i].title }} </p>
-                                <p class="col-2 text-muted"> 1</p>
-                                <p class="col-6 text-muted"> {{ v[i].price }} </p>
                             </div>
                         </div>
-                            {% endfor %}
-                    </ul>
-                </div>
-            {% endfor %}
-        </div>
-    </section>
+                    {% endif %}
+                {% endfor %}
+
+            </div>
+        </section>
+    {% endfor %}
 {% endblock %}
 {% include 'footer.html' %}
+
+
